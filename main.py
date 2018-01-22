@@ -107,6 +107,10 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     #from term 1, loss
     cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=logits))
 
+    #Taken from Review
+    reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+    cross_entropy_loss = cross_entropy_loss + sum(reg_losses)
+
     #optimizer, told to you adam
     optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate)
     train_op = optimizer.minimize(cross_entropy_loss)
@@ -156,7 +160,7 @@ def run():
     data_dir = './data'
     runs_dir = './runs'
     tests.test_for_kitti_dataset(data_dir)
-    epochs = 15 #suggested by Udacity review
+    epochs = 40 #suggested by Udacity review
     batch_size = 2 #suggested by Udacity review or 4
     #keep_prob = 0.5
     #learning_rate = 0.001 #from term 1
