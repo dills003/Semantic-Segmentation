@@ -61,27 +61,28 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :return: The Tensor for the last layer of output
     """
     # TODO: Implement function //meat of project
+    #use weight initialization suggested by Udacity review
     # 1 X 1 convolution to reduce the number of filters
-    conv_1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    conv_1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, kernel_size=1, strides=(1,1), padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
 
     #I need to do a 1X1 for each of input layers.."add 1X1 on top of pool4" but sizes have to match
     
     #start to upsample to the original image size, figure out which ones to add together
-    upsample1 = tf.layers.conv2d_transpose(conv_1x1, num_classes, 4, 2, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    upsample1 = tf.layers.conv2d_transpose(conv_1x1, num_classes, 4, 2, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
 
     #add the upsample to the  vgg4, 1X1 vgg4 first so that the sizes match
-    vgg_layer4_1x1 = tf.layers.conv2d(vgg_layer4_out, num_classes, 1, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    vgg_layer4_1x1 = tf.layers.conv2d(vgg_layer4_out, num_classes, 1, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
     add_layers1 = tf.add(upsample1, vgg_layer4_1x1) 
 
     #upsample again
-    upsample2 = tf.layers.conv2d_transpose(add_layers1, num_classes, 4, 2, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    upsample2 = tf.layers.conv2d_transpose(add_layers1, num_classes, 4, 2, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
     
     #add upsample again with layer 3, same process, probably should build a function
-    vgg_layer3_1x1 = tf.layers.conv2d(vgg_layer3_out, num_classes, 1, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    vgg_layer3_1x1 = tf.layers.conv2d(vgg_layer3_out, num_classes, 1, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
     add_layers2 = tf.add(upsample2, vgg_layer3_1x1)
      
     #final upsample
-    last_layer_output = tf.layers.conv2d_transpose(add_layers2, num_classes, 16, 8, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    last_layer_output = tf.layers.conv2d_transpose(add_layers2, num_classes, 16, 8, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01))
  
     return last_layer_output
 
@@ -139,10 +140,11 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
 
     for epoch in range(epochs):
         for image, label in get_batches_fn(batch_size):     
-              accuracy, loss = sess.run([train_op, cross_entropy_loss], feed_dict={input_image: image, correct_label: label, keep_prob: 0.5, learning_rate: 0.001})  #how we did, need 93%
+              accuracy, loss = sess.run([train_op, cross_entropy_loss], feed_dict={input_image: image, correct_label: label, keep_prob: 0.5, learning_rate: 0.00001})  #how we did, learing rate suggested by Udacity reviw
         print("EPOCH {} ...".format(epoch+1))
         print("Loss = {:.3f}".format(loss))
         print()
+        sess.close()
 
     pass
 tests.test_train_nn(train_nn)
@@ -154,8 +156,8 @@ def run():
     data_dir = './data'
     runs_dir = './runs'
     tests.test_for_kitti_dataset(data_dir)
-    epochs = 25
-    batch_size = 50
+    epochs = 15 #suggested by Udacity review
+    batch_size = 2 #suggested by Udacity review or 4
     #keep_prob = 0.5
     #learning_rate = 0.001 #from term 1
 
@@ -169,6 +171,7 @@ def run():
     #  https://www.cityscapes-dataset.com/
 
     with tf.Session() as sess:
+
         # Path to vgg model
         vgg_path = os.path.join(data_dir, 'vgg')
 
